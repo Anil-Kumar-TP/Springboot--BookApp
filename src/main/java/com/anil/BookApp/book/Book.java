@@ -5,10 +5,7 @@ import com.anil.BookApp.common.BaseEntity;
 import com.anil.BookApp.feedback.Feedback;
 import com.anil.BookApp.history.BookTransactionHistory;
 import com.anil.BookApp.user.User;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,5 +47,13 @@ public class Book extends BaseEntity {
     @OneToMany(mappedBy = "book")
     private List<BookTransactionHistory> bookTransactionHistories;
 
-
+    @Transient
+    public double getRate(){
+        if (feedbacks == null || feedbacks.isEmpty()){
+            return 0.0;
+        }
+        var rate = this.feedbacks.stream().mapToDouble(Feedback::getNote).average().orElse(0.0);
+        double roundedRate = Math.round(rate * 10.0) / 10.0;
+        return roundedRate;
+    }
 }
