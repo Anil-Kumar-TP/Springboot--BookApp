@@ -1,9 +1,12 @@
 package com.anil.BookApp.history;
 
+import com.anil.BookApp.book.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.Optional;
 
 public interface BookTransactionHistoryRepository extends JpaRepository<BookTransactionHistory,Integer> {
 
@@ -30,5 +33,15 @@ public interface BookTransactionHistoryRepository extends JpaRepository<BookTran
             AND bookTransactionHistory.returnApproved = false
             """)
     boolean isAlreadyBorrowedByUser(Integer bookId, Integer userId);
+
+    @Query("""
+            SELECT transaction
+            FROM BookTransactionHistory transaction
+            WHERE transaction.user.id = :userId
+            AND transaction.book.id = :bookId
+            AND transaction.returned = false
+            AND transaction.returnApproved = false
+            """)
+   Optional<BookTransactionHistory> findByBookIdAndUserId(Book book, Integer userId);
 
 }

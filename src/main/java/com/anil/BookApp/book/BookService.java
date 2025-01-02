@@ -90,6 +90,7 @@ public class BookService {
         return bookId;
     }
 
+    //only check for the loggedIn user borrowing the book.In real world,u should do if there is only a single copy of a book then that book must be returned , not limited to loggedIn user.
     public Integer borrowBook(Integer bookId, Authentication connectedUser) {
         Book book = bookRepository.findById(bookId).orElseThrow(()->new EntityNotFoundException("Mo book found with Id :" + bookId));
         if (book.isArchived() || !book.isShareable()){
@@ -109,6 +110,20 @@ public class BookService {
                                                         returned(false).
                                                         returnApproved(false).
                                                         build();
+        return bookTransactionHistoryRepository.save(bookTransactionHistory).getId();
+    }
+
+    public Integer returnBorrowedBook(Integer bookId, Authentication connectedUser) {
+        Book book = bookRepository.findById(bookId).orElseThrow(()->new EntityNotFoundException("Mo book found with Id :" + bookId));
+        if (book.isArchived() || !book.isShareable()){
+            throw new OperationNotPermittedException("You cannot borrow archived / non-shareable books");
+        }
+        User user = ((User) connectedUser.getPrincipal());
+        if (Objects.equals(book.getOwner().getId(),user.getId())){
+            throw new OperationNotPermittedException("You cannot borrow or return your own book");
+        }
+        BookTransactionHistory bookTransactionHistory = bookTransactionHistoryRepository.findByBookIdAndUserId(book,user.getId()).orElseThrow(()->new OperationNotPermittedException("You did not borrowed this book to return"));
+        bookTransactionHistory.setReturned(true);
         return bookTransactionHistoryRepository.save(bookTransactionHistory).getId();
     }
 }
