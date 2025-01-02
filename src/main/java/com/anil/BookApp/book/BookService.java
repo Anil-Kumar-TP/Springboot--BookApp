@@ -1,6 +1,7 @@
 package com.anil.BookApp.book;
 
 import com.anil.BookApp.common.PageResponse;
+import com.anil.BookApp.exceptions.OperationNotPermittedException;
 import com.anil.BookApp.history.BookTransactionHistory;
 import com.anil.BookApp.history.BookTransactionHistoryRepository;
 import com.anil.BookApp.user.User;
@@ -14,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -64,5 +66,27 @@ public class BookService {
         Page<BookTransactionHistory> allBorrowedBooks = bookTransactionHistoryRepository.findAllReturnedBooks(pageable,user.getId());
         List<BorrowedBookResponse> borrowedBookResponse = allBorrowedBooks.stream().map(bookMapper::toBorrowedBookResponse).toList();
         return new PageResponse<>(borrowedBookResponse, allBorrowedBooks.getNumber(),allBorrowedBooks.getSize(),allBorrowedBooks.getTotalElements(),allBorrowedBooks.getTotalPages(),allBorrowedBooks.isFirst(),allBorrowedBooks.isLast());
+    }
+
+    public Integer updateShareableStatus(Integer bookId, Authentication connectedUser) {
+        Book book = bookRepository.findById(bookId).orElseThrow(()->new EntityNotFoundException("No book found with Id: " + bookId));
+        User user = ((User) connectedUser.getPrincipal());
+        if (!Objects.equals(book.getOwner().getId(),user.getId())){
+            throw new OperationNotPermittedException("You cannot update status of sharing books of other people");
+        }
+        book.setShareable(!book.isShareable());
+        bookRepository.save(book);
+        return bookId;
+    }
+
+    public Integer updateArchivedStatus(Integer bookId, Authentication connectedUser) {
+        Book book = bookRepository.findById(bookId).orElseThrow(()->new EntityNotFoundException("No book found with Id: " + bookId));
+        User user = ((User) connectedUser.getPrincipal());
+        if (!Objects.equals(book.getOwner().getId(),user.getId())){
+            throw new OperationNotPermittedException("You cannot update status of archiving books of other people");
+        }
+        book.setArchived(!book.isArchived());
+        bookRepository.save(book);
+        return bookId;
     }
 }
