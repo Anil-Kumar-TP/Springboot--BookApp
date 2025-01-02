@@ -1,5 +1,6 @@
 package com.anil.BookApp.book;
 
+import com.anil.BookApp.file.FileUtils;
 import com.anil.BookApp.history.BookTransactionHistory;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ public class BookMapper {
                 archived(book.isArchived()).
                 shareable(book.isShareable()).
                 owner(book.getOwner().fullName()).
+                cover(FileUtils.readFileFromLocation(book.getBookCover())).
                 build();
     }
 

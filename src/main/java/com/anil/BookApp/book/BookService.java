@@ -2,6 +2,7 @@ package com.anil.BookApp.book;
 
 import com.anil.BookApp.common.PageResponse;
 import com.anil.BookApp.exceptions.OperationNotPermittedException;
+import com.anil.BookApp.file.FileStorageService;
 import com.anil.BookApp.history.BookTransactionHistory;
 import com.anil.BookApp.history.BookTransactionHistoryRepository;
 import com.anil.BookApp.user.User;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +26,7 @@ public class BookService {
     private final  BookMapper bookMapper;
     private final BookRepository bookRepository;
     private final BookTransactionHistoryRepository bookTransactionHistoryRepository;
+    private final FileStorageService fileStorageService;
 
     public Integer save(BookRequest request, Authentication connectedUser) {
         User user = ((User) connectedUser.getPrincipal());
@@ -139,5 +142,13 @@ public class BookService {
         BookTransactionHistory bookTransactionHistory = bookTransactionHistoryRepository.findByBookIdAndOwnerId(book,user.getId()).orElseThrow(()->new OperationNotPermittedException("Book is not returned yet,so u cannot approve it"));
         bookTransactionHistory.setReturnApproved(true);
         return bookTransactionHistoryRepository.save(bookTransactionHistory).getId();
+    }
+
+    public void uploadBookCoverPicture(Integer bookId, MultipartFile file, Authentication connectedUser) {
+        Book book = bookRepository.findById(bookId).orElseThrow(()->new EntityNotFoundException("Mo book found with Id :" + bookId));
+        User user = ((User) connectedUser.getPrincipal());
+        var bookCover = fileStorageService.saveFile(file,user.getId());
+        book.setBookCover(bookCover);
+        bookRepository.save(book);
     }
 }
